@@ -3,6 +3,12 @@
 Tray app for Windows that picks photos from Immich by filters and sets them as the desktop wallpaper.
 Electron + TypeScript.
 
+![Settings: connection check, filters and a live preview of the photos that fit](docs/screenshots/settings-preview.jpg)
+
+Filter sets switch the filters by day and time, for example a different selection on weekday evenings:
+
+![Settings: an "Evening" filter set for Mon–Fri 18:00–23:00 with smart search](docs/screenshots/filter-sets.jpg)
+
 ## Run
 
 ```bash
