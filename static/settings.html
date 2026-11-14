@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' immich-thumb: data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>Immich Wallpaper — Settings</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9; --panel: #fff; --text: #1d2330; --muted: #69717f; --line: #dfe3ea;
+    --accent: #4250af; --accent-text: #fff; --chip: #e8ebf7; --ok: #1f8a4c; --warn: #b5541c; --err: #c0392b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #16181d; --panel: #1f2229; --text: #e6e8ee; --muted: #9aa1ad; --line: #30343e;
+      --accent: #8b97ff; --accent-text: #10131a; --chip: #2c3142; --ok: #5ccf8a; --warn: #f0a35e; --err: #ff7b6e; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  .layout { display: grid; grid-template-columns: minmax(360px, 440px) 1fr; height: 100vh; }
+  .form { overflow-y: auto; padding: 18px 18px 90px; border-right: 1px solid var(--line); }
+  .side { display: flex; flex-direction: column; min-width: 0; }
+  h1 { font-size: 18px; margin: 0 0 14px; font-weight: 600; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+  section > h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+  label { display: block; margin: 8px 0 3px; color: var(--muted); font-size: 12px; }
+  label.inline { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 14px; margin: 10px 0 2px; }
+  input[type=text], input[type=password], input[type=number], select {
+    width: 100%; padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); font: inherit; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  button { white-space: nowrap; font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .status { font-size: 12px; margin-top: 6px; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .err { color: var(--err); }
+  .perms { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .perm { font-size: 11px; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--line); }
+  .perm.have { border-color: var(--ok); color: var(--ok); } .perm.miss { border-color: var(--warn); color: var(--warn); }
+  .picker { position: relative; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+  .chip { background: var(--chip); border-radius: 12px; padding: 1px 4px 1px 10px; display: inline-flex; align-items: center; gap: 2px; font-size: 13px; }
+  .chip button { border: 0; background: none; padding: 0 5px; color: var(--muted); }
+  .dropdown { position: absolute; z-index: 5; left: 0; right: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    max-height: 220px; overflow-y: auto; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  .dropdown div { padding: 5px 10px; cursor: pointer; display: flex; justify-content: space-between; }
+  .dropdown div:hover, .dropdown div.active { background: var(--chip); }
+  .dropdown .count { color: var(--muted); font-size: 12px; }
+  .footer { position: fixed; bottom: 0; left: 0; width: min(440px, 100%); padding: 12px 18px; background: var(--bg); border-top: 1px solid var(--line);
+    display: flex; gap: 8px; align-items: center; }
+  .footer .status { margin: 0 0 0 auto; }
+  .tabs { display: flex; gap: 4px; padding: 12px 16px 0; border-bottom: 1px solid var(--line); }
+  .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 6px 12px; }
+  .tabs button.active { border-bottom-color: var(--accent); color: var(--accent); }
+  .pane { flex: 1; overflow-y: auto; padding: 14px 16px; display: none; }
+  .pane.active { display: block; }
+  .stats { margin-bottom: 10px; color: var(--muted); }
+  .stats b { color: var(--text); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .tile { position: relative; aspect-ratio: 16 / 10; background: var(--chip); border-radius: 6px; overflow: hidden; cursor: pointer; }
+  .tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tile span { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 6px; font-size: 11px; color: #fff;
+    background: linear-gradient(transparent, rgba(0,0,0,.7)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  pre.log { font: 12px/1.5 Consolas, "Cascadia Mono", monospace; white-space: pre-wrap; margin: 0; }
+  .current { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .current img { width: 160px; aspect-ratio: 16/10; object-fit: cover; border-radius: 6px; background: var(--chip); }
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+  .setbar { display: flex; gap: 6px; margin-bottom: 6px; }
+  .setbar select { flex: 1; }
+  .setsched { border-left: 3px solid var(--accent); padding: 0 0 6px 10px; margin: 6px 0 10px; }
+  .days { display: flex; gap: 4px; flex-wrap: wrap; }
+  .days label { display: inline-flex; align-items: center; gap: 4px; margin: 0; padding: 3px 8px; border: 1px solid var(--line);
+    border-radius: 6px; color: var(--text); font-size: 13px; cursor: pointer; }
+  .days input { margin: 0; }
+  .shots { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="form">
+    <h1>Immich Wallpaper</h1>
+
+    <section>
+      <h2>Connection</h2>
+      <label for="server">Immich server URL</label>
+      <input id="server" type="text" placeholder="http://localhost:2283">
+      <label for="apikey">API key</label>
+      <input id="apikey" type="password" autocomplete="off">
+      <div class="hint">Stored in Windows Credential Manager, never in a file.</div>
+      <div style="margin-top:8px"><button id="check">Check connection</button></div>
+      <div id="checkStatus" class="status"></div>
+      <div id="perms" class="perms"></div>
+    </section>
+
+    <section>
+      <h2>Which photos</h2>
+      <div class="setbar">
+        <select id="setSelect" aria-label="Filter set"></select>
+        <button id="setAdd" title="Add a filter set for certain days and hours">+ Add set</button>
+        <button id="setDelete" title="Delete this filter set">Delete</button>
+      </div>
+      <div id="setSchedule" class="setsched">
+        <div class="row">
+          <div><label for="setName">Name</label><input id="setName" type="text"></div>
+          <div><label class="inline" style="margin-top:26px"><input id="setEnabled" type="checkbox"> Enabled</label></div>
+        </div>
+        <label>Days</label>
+        <div class="days" id="setDays"></div>
+        <div class="row">
+          <div><label for="setFrom">From</label><input id="setFrom" type="time"></div>
+          <div><label for="setTo">To</label><input id="setTo" type="time"></div>
+        </div>
+        <div class="hint">"To" earlier than "From" means overnight. Same time = all day. The first matching set in the list wins; otherwise Default is used.</div>
+      </div>
+      <label>Tags</label><div class="picker" id="pick-tags"></div>
+      <label>Albums</label><div class="picker" id="pick-albums"></div>
+      <label>People</label><div class="picker" id="pick-people"></div>
+      <div class="hint">Several items in one field: a photo must match all of them.</div>
+      <label class="inline"><input id="favoritesOnly" type="checkbox"> Favorites only</label>
+      <label for="smartQuery">Smart search (describe the picture)</label>
+      <input id="smartQuery" type="text" placeholder="e.g. mountains at sunset">
+      <div class="row">
+        <div><label for="smartTop">Use top N results</label><input id="smartTop" type="number" min="10" max="1000" step="10"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Fit to screen</h2>
+      <div class="row">
+        <div><label for="orientation">Orientation</label>
+          <select id="orientation">
+            <option value="auto">Auto (match screen)</option><option value="landscape">Landscape</option>
+            <option value="portrait">Portrait</option><option value="square">Square</option><option value="any">Any</option>
+          </select></div>
+        <div><label for="style">Wallpaper style</label>
+          <select id="style">
+            <option value="fill">Fill</option><option value="fit">Fit</option><option value="stretch">Stretch</option>
+            <option value="center">Center</option><option value="tile">Tile</option><option value="span">Span</option>
+          </select></div>
+      </div>
+      <div class="row">
+        <div><label for="minWidth">Min width, px</label><input id="minWidth" type="number" min="0" step="10"></div>
+        <div><label for="minHeight">Min height, px</label><input id="minHeight" type="number" min="0" step="10"></div>
+      </div>
+      <div class="row">
+        <div><label for="minAspect">Min aspect (w/h, 0 = off)</label><input id="minAspect" type="number" min="0" step="0.05"></div>
+        <div><label for="maxAspect">Max aspect (0 = off)</label><input id="maxAspect" type="number" min="0" step="0.05"></div>
+      </div>
+      <label for="quality">Download</label>
+      <select id="quality">
+        <option value="fullsize">Full size (needs asset.download)</option><option value="preview">Preview (smaller, faster)</option>
+      </select>
+      <div class="hint" id="screenHint"></div>
+      <label class="inline"><input id="perMonitor" type="checkbox"> Separate photo on each monitor</label>
+      <div class="hint">Orientation "Auto" is then matched per monitor.</div>
+      <label class="inline"><input id="lockScreen" type="checkbox"> Also set the lock screen (photo of monitor 1)</label>
+    </section>
+
+    <section>
+      <h2>Schedule</h2>
+      <div class="row3">
+        <div><label for="intervalMinutes">Change every, min</label><input id="intervalMinutes" type="number" min="1"></div>
+        <div><label for="historySize">No repeats for</label><input id="historySize" type="number" min="0"></div>
+        <div><label for="cacheSize">Offline cache</label><input id="cacheSize" type="number" min="1"></div>
+      </div>
+      <label class="inline"><input id="autostart" type="checkbox"> Start with Windows</label>
+      <div class="hint" id="autostartHint"></div>
+    </section>
+  </div>
+
+  <div class="footer">
+    <button id="save" class="primary">Save</button>
+    <button id="saveNext">Save &amp; change now</button>
+    <div id="saveStatus" class="status"></div>
+  </div>
+
+  <div class="side">
+    <div class="tabs">
+      <button data-tab="preview" class="active">Preview</button>
+      <button data-tab="current">Current</button>
+      <button data-tab="log">Log</button>
+    </div>
+    <div class="pane active" id="pane-preview">
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px">
+        <button id="preview" class="primary">Show matching photos</button>
+        <span class="hint">Uses the form as it is now, before saving. Click a photo to open it in Immich.</span>
+      </div>
+      <div id="previewStats" class="stats"></div>
+      <div id="grid" class="grid"></div>
+    </div>
+    <div class="pane" id="pane-current">
+      <div id="currentBox"></div>
+      <button id="blockedClear">Clear "never show" list</button>
+      <span id="blockedInfo" class="hint"></span>
+    </div>
+    <div class="pane" id="pane-log"><pre class="log" id="log"></pre></div>
+  </div>
+</div>
+<script src="../dist/renderer/settings.js"></script>
+</body>
+</html>

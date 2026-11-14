@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+release/
+
+# logs and debug files
+*.log
+npm-debug.log*
+builder-debug.yml
+
+# editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

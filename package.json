@@ -1,0 +1,57 @@
+{
+  "name": "immich-wallpaper",
+  "productName": "Immich Wallpaper",
+  "version": "0.2.1",
+  "description": "Tray app that sets Windows wallpaper from filtered Immich photos",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "tsc -p . && electron .",
+    "dist": "tsc -p . && electron-builder --win dir",
+    "installer": "tsc -p . && electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "local.immich.wallpaper",
+    "productName": "Immich Wallpaper",
+    "files": [
+      "dist/**",
+      "static/**",
+      "assets/**",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/node_modules/koffi/**",
+      "**/node_modules/@koromix/**",
+      "**/node_modules/libheif-js/**",
+      "**/node_modules/sharp/**",
+      "**/node_modules/@img/**"
+    ],
+    "win": {
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "runAfterFinish": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true,
+      "artifactName": "ImmichWallpaper-Setup-${version}.exe"
+    },
+    "directories": {
+      "output": "release"
+    }
+  },
+  "dependencies": {
+    "heic-decode": "^2.1.0",
+    "koffi": "^3.3.7",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "electron": "^45.3.1",
+    "electron-builder": "^26.18.0",
+    "typescript": "^7.0.2"
+  }
+}
