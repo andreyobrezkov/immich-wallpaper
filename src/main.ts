@@ -1,5 +1,4 @@
 import { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, shell, screen, powerMonitor, protocol, MenuItemConstructorOptions } from 'electron';
-import fs from 'node:fs';
 import path from 'node:path';
 import { Config, DEFAULTS, Named, configExists, loadConfig, saveConfig } from './config';
 import { Changer, Target } from './changer';
@@ -28,8 +27,6 @@ let settingsWin: BrowserWindow | null = null;
 /** server/key used by the settings window preview before they are saved */
 let previewCreds: { server: string; key: string } | null = null;
 
-const argValue = (name: string) => process.argv.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3);
-
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
@@ -49,9 +46,6 @@ async function start(): Promise<void> {
   apiKey = readApiKey();
   changer = new Changer(dataDir);
   log(`started ${app.getVersion()}, data in ${dataDir}`);
-
-  const importPath = argValue('import-config');
-  if (importPath) await importPsConfig(importPath);
 
   protocol.handle('immich-thumb', async req => {
     const id = new URL(req.url).pathname.replace(/^\/+/, '');
@@ -327,38 +321,4 @@ function registerIpc(): void {
   ipcMain.handle('action:openExternal', (_e, url: string) => { if (/^https?:\/\//.test(url)) void shell.openExternal(url); });
   ipcMain.handle('log:recent', () => recentLog());
   ipcMain.handle('blocked:clear', () => { changer.state.blocked = []; changer.saveState(); log('blocked list cleared'); return true; });
-}
-
-// ---------- one-time import of the PowerShell prototype's config ----------
-async function importPsConfig(file: string): Promise<void> {
-  try {
-    const ps = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^﻿/, ''));
-    const client = new ImmichClient(ps.server, ps.apiKey);
-    const next: Config = { ...cfg, server: ps.server };
-    const simple = ['favoritesOnly', 'smartQuery', 'smartTop', 'orientation', 'minWidth', 'minHeight', 'minAspect', 'maxAspect',
-      'quality', 'style', 'batchSize', 'historySize', 'cacheSize', 'retries', 'retryDelaySec'] as const;
-    for (const k of simple) if (ps[k] !== undefined) (next as unknown as Record<string, unknown>)[k] = ps[k];
-    if (next.quality as string === 'original') next.quality = 'fullsize';
-
-    const l = await lists(client);
-    const pick = (names: string[] = [], ids: string[] = [], all: Named[]) =>
-      all.filter(x => names.includes(x.name) || names.includes(x.name.split('/').pop()!) || ids.includes(x.id)).map(({ id, name }) => ({ id, name }));
-    next.tags = pick(ps.tags, ps.tagIds, l.tags);
-    next.albums = pick(ps.albums, ps.albumIds, l.albums);
-    next.people = pick(ps.people, ps.personIds, l.people);
-
-    writeApiKey(ps.apiKey);
-    apiKey = ps.apiKey;
-    cfg = next;
-    saveConfig(dataDir, cfg);
-
-    const hist = path.join(path.dirname(file), 'history.txt');
-    if (fs.existsSync(hist)) {
-      changer.state.history = fs.readFileSync(hist, 'utf8').split(/\r?\n/).map(s => s.trim()).filter(s => /^[0-9a-f-]{36}$/.test(s));
-      changer.saveState();
-    }
-    log(`imported ${file}: tags=${next.tags.map(t => t.name).join('|') || '-'}, history=${changer.state.history.length}; API key moved to Credential Manager`);
-  } catch (e) {
-    log(`ERROR: import of ${file} failed: ${errText(e)}`);
-  }
 }

@@ -1,7 +1,7 @@
 # Immich Wallpaper
 
 Tray app for Windows that picks photos from Immich by filters and sets them as the desktop wallpaper.
-Electron + TypeScript; replaces the PowerShell prototype in `../immich-wallpaper`.
+Electron + TypeScript.
 
 ## Run
 
@@ -29,7 +29,6 @@ npm run installer    # build release/ImmichWallpaper-Setup-<version>.exe (per-us
 - `IMMICH_WALLPAPER_CACHE` environment variable moves the photo cache to another folder.
 
 `Immich Wallpaper.exe --next` changes the wallpaper in the running instance (handy for a hotkey shortcut).
-`--import-config=<path>` imports a config.json of the PowerShell prototype (and its history.txt) once.
 
 ## Tray menu
 
