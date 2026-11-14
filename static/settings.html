@@ -75,6 +75,13 @@
     border-radius: 6px; color: var(--text); font-size: 13px; cursor: pointer; }
   .days input { margin: 0; }
   .shots { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .about { display: flex; gap: 14px; align-items: center; margin: 8px 0 18px; }
+  .about-title { font-size: 18px; font-weight: 600; margin: 0 0 2px; }
+  .about-list { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; }
+  .about-list dt { color: var(--muted); }
+  .about-list dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+  .mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; }
+  a { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -181,6 +188,7 @@
       <button data-tab="preview" class="active">Preview</button>
       <button data-tab="current">Current</button>
       <button data-tab="log">Log</button>
+      <button data-tab="about">About</button>
     </div>
     <div class="pane active" id="pane-preview">
       <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px">
@@ -196,6 +204,21 @@
       <span id="blockedInfo" class="hint"></span>
     </div>
     <div class="pane" id="pane-log"><pre class="log" id="log"></pre></div>
+    <div class="pane" id="pane-about">
+      <div class="about">
+        <img src="../assets/icon.png" alt="" width="64" height="64">
+        <div>
+          <h2 class="about-title">Immich Wallpaper <span id="aboutVersion" class="hint"></span></h2>
+          <div id="aboutDescription" class="hint"></div>
+        </div>
+      </div>
+      <dl class="about-list">
+        <dt>Project on GitHub</dt><dd><a href="#" id="aboutRepo"></a></dd>
+        <dt>Releases</dt><dd><a href="#" id="aboutReleases"></a></dd>
+        <dt>Data folder</dt><dd id="aboutData" class="mono"></dd>
+        <dt>Electron</dt><dd id="aboutElectron"></dd>
+      </dl>
+    </div>
   </div>
 </div>
 <script src="../dist/renderer/settings.js"></script>

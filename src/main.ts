@@ -11,6 +11,7 @@ import { activeProfile, effectiveConfig, nextBoundary } from './profiles';
 
 const ROOT = path.join(__dirname, '..');
 const asset = (f: string) => path.join(ROOT, 'assets', f);
+const PKG = require(path.join(ROOT, 'package.json')) as { homepage?: string; description?: string };
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'immich-thumb', privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -267,6 +268,10 @@ function registerIpc(): void {
     } catch { /* not critical */ }
     return {
       cfg, hasKey: !!apiKey, keyHint: apiKey ? `…${apiKey.slice(-4)}` : '',
+      about: {
+        version: app.getVersion(), homepage: PKG.homepage ?? '', description: PKG.description ?? '',
+        electron: process.versions.electron, logFile: logFile(),
+      },
       screen: d, orientation: orientation(), monitors, dataDir, packaged: app.isPackaged,
       activeProfile: activeProfile(cfg)?.name ?? null, screens: changer.state.screens,
       current: changer.state.current, lastError: changer.state.lastError,

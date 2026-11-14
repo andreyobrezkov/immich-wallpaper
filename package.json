@@ -1,9 +1,14 @@
 {
   "name": "immich-wallpaper",
   "productName": "Immich Wallpaper",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Tray app that sets Windows wallpaper from filtered Immich photos",
   "private": true,
+  "homepage": "https://github.com/andreyobrezkov/immich-wallpaper",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andreyobrezkov/immich-wallpaper.git"
+  },
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc -p .",

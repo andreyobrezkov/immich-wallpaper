@@ -4,6 +4,7 @@ interface NamedItem { id: string; name: string; count?: number }
 interface SettingsData {
   cfg: Record<string, any>;
   hasKey: boolean; keyHint: string;
+  about: { version: string; homepage: string; description: string; electron: string; logFile: string };
   screen: { width: number; height: number }; orientation: string;
   monitors: { label: string; orientation: string }[];
   activeProfile: string | null;
@@ -275,10 +276,15 @@ async function loadLists() {
   if (!server || (!typedKey() && !data.hasKey)) return;
   const l = await window.api.lists(server, typedKey());
   pickers.tags.options = l.tags; pickers.albums.options = l.albums; pickers.people.options = l.people;
-  const missing = (what: string) => l.errors.find(e => e.startsWith(what));
-  pickers.tags.setDisabled(missing('tags') ? 'needs tag.read permission' : null);
-  pickers.albums.setDisabled(missing('albums') ? 'needs album.read permission' : null);
-  pickers.people.setDisabled(missing('people') ? 'needs person.read permission' : null);
+  // "needs permission" only for 403; otherwise show the real reason (server down, timeout…)
+  const reason = (what: string, perm: string) => {
+    const e = l.errors.find(x => x.startsWith(what) || !/^(tags|albums|people):/.test(x));
+    if (!e) return null;
+    return /\b403\b/.test(e) ? `needs ${perm} permission` : `cannot load: ${e.replace(/^\w+: /, '')}`;
+  };
+  pickers.tags.setDisabled(reason('tags', 'tag.read'));
+  pickers.albums.setDisabled(reason('albums', 'album.read'));
+  pickers.people.setDisabled(reason('people', 'person.read'));
 }
 
 // ---------- preview ----------
@@ -350,6 +356,22 @@ async function onStateChanged() {
   if (activeTab() === 'current') { data = await window.api.load(); renderCurrent(); }
 }
 
+function renderAbout() {
+  const a = data.about;
+  $<HTMLSpanElement>('aboutVersion').textContent = `v${a.version}`;
+  $<HTMLDivElement>('aboutDescription').textContent = a.description;
+  const link = (id: string, url: string) => {
+    const el = $<HTMLAnchorElement>(id);
+    el.textContent = url.replace(/^https:\/\//, '');
+    el.href = url;
+    el.onclick = e => { e.preventDefault(); void window.api.openExternal(url); };
+  };
+  link('aboutRepo', a.homepage);
+  link('aboutReleases', `${a.homepage}/releases`);
+  $<HTMLElement>('aboutData').textContent = data.dataDir;
+  $<HTMLElement>('aboutElectron').textContent = a.electron;
+}
+
 // ---------- save ----------
 async function save(changeNow: boolean) {
   const cfg = readForm();
@@ -377,6 +399,7 @@ async function init() {
   $<HTMLDivElement>('screenHint').textContent = `${mons}. Min size is compared long side to long side, in real pixels.`;
   $<HTMLDivElement>('autostartHint').textContent = data.packaged ? '' : 'Takes effect only in the built app (npm run dist), not in dev mode.';
   renderCurrent();
+  renderAbout();
 
   document.querySelectorAll('input, select').forEach(el => el.addEventListener('change', markDirty));
   $<HTMLSelectElement>('setSelect').onchange = e => switchSet(+(e.target as HTMLSelectElement).value);
