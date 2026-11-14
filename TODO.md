@@ -8,7 +8,9 @@
 
 ## Decisions
 
-- Auto-update: not planned. New versions are built by GitHub Actions (bump `version`, push to `master`) and
-  installed by running the release's installer over the old one.
+- Auto-update (0.3.0+): electron-updater reads `latest.yml` from the public GitHub releases, checks a minute after
+  start and every 6 hours, downloads in the background and installs on quit or via "Restart to update".
+  The repository was made public for this (no token in the app); commit emails were rewritten to the GitHub
+  noreply address before that. Versions before 0.3.0 have no updater: install 0.3.0 by hand once.
 - HEIC: converted locally from the original (heic-decode/WASM); Immich's full-size generation can stay off.
   RAW is not handled: the library has no RAW files.

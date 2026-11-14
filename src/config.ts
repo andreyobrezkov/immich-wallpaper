@@ -45,6 +45,7 @@ export interface Config extends FilterSet {
   retries: number;
   retryDelaySec: number;
   autostart: boolean;
+  autoUpdate: boolean;
   paused: boolean;
 }
 
@@ -56,7 +57,7 @@ export const DEFAULTS: Config = {
   orientation: 'auto', minWidth: 1920, minHeight: 1080, minAspect: 0, maxAspect: 0,
   quality: 'fullsize', style: 'fill', intervalMinutes: 60,
   batchSize: 200, historySize: 500, cacheSize: 30, retries: 3, retryDelaySec: 20,
-  autostart: true, paused: false,
+  autostart: true, autoUpdate: true, paused: false,
 };
 
 const fileOf = (dir: string) => path.join(dir, 'config.json');

@@ -8,6 +8,7 @@ import { initLog, log, logFile, onLogLine, recentLog } from './log';
 import { readApiKey, writeApiKey } from './win32';
 import { listMonitors } from './desktopWallpaper';
 import { activeProfile, effectiveConfig, nextBoundary } from './profiles';
+import { checkNow, initUpdater, installNow, setAutoUpdate, updateStatus, UpdateStatus } from './updater';
 
 const ROOT = path.join(__dirname, '..');
 const asset = (f: string) => path.join(ROOT, 'assets', f);
@@ -66,6 +67,10 @@ async function start(): Promise<void> {
   tray.on('double-click', () => openCurrentInImmich());
   updateTray();
   applyAutostart();
+  initUpdater(cfg.autoUpdate, s => {
+    updateTray();
+    settingsWin?.webContents.send('update:status', s);
+  });
 
   powerMonitor.on('resume', () => schedule());     // timers drift during sleep
   powerMonitor.on('unlock-screen', () => schedule());
@@ -205,8 +210,14 @@ function updateTray(): void {
       { label: 'Never show this photo', enabled: !!cur?.id && !changer.busy, click: () => void neverShow(cur?.id ? (st.screens[0]?.id ?? null) : null) },
     );
   }
+  const upd = updateStatus();
+  items.push({ type: 'separator' });
+  if (upd.state === 'downloaded') {
+    items.push({ label: `Restart to update to v${upd.version}`, click: installNow });
+  } else if (upd.state !== 'disabled') {
+    items.push({ label: updateLabel(upd), enabled: upd.state !== 'checking' && upd.state !== 'downloading', click: () => void checkNow() });
+  }
   items.push(
-    { type: 'separator' },
     { label: 'Settings…', click: openSettings },
     { label: 'Open log', click: () => void shell.openPath(logFile()) },
     { label: 'Open cache folder', click: () => void shell.openPath(changer.cacheDir) },
@@ -214,6 +225,16 @@ function updateTray(): void {
     { label: 'Quit', click: () => app.quit() },
   );
   tray.setContextMenu(Menu.buildFromTemplate(items));
+}
+
+function updateLabel(s: UpdateStatus): string {
+  switch (s.state) {
+    case 'checking': return 'Checking for updates…';
+    case 'available': return `Update v${s.version} found…`;
+    case 'downloading': return `Downloading v${s.version}: ${s.percent}%`;
+    case 'error': return 'Check for updates (last check failed)';
+    default: return 'Check for updates';
+  }
 }
 
 // ---------- autostart ----------
@@ -272,6 +293,7 @@ function registerIpc(): void {
         version: app.getVersion(), homepage: PKG.homepage ?? '', description: PKG.description ?? '',
         electron: process.versions.electron, logFile: logFile(),
       },
+      update: updateStatus(),
       screen: d, orientation: orientation(), monitors, dataDir, packaged: app.isPackaged,
       activeProfile: activeProfile(cfg)?.name ?? null, screens: changer.state.screens,
       current: changer.state.current, lastError: changer.state.lastError,
@@ -281,10 +303,12 @@ function registerIpc(): void {
 
   ipcMain.handle('settings:save', (_e, next: Config, newKey: string | null) => {
     if (newKey) { writeApiKey(newKey.trim()); apiKey = newKey.trim(); log('API key saved to Credential Manager'); }
+    const updateWas = cfg.autoUpdate;
     cfg = { ...DEFAULTS, ...next, paused: cfg.paused };
     saveConfig(dataDir, cfg);
     log('settings saved');
     applyAutostart();
+    if (cfg.autoUpdate !== updateWas) setAutoUpdate(cfg.autoUpdate);
     schedule();
     return true;
   });
@@ -323,6 +347,8 @@ function registerIpc(): void {
   });
 
   ipcMain.handle('action:next', () => changeNow('settings'));
+  ipcMain.handle('update:check', () => checkNow());
+  ipcMain.handle('update:install', () => installNow());
   ipcMain.handle('action:openExternal', (_e, url: string) => { if (/^https?:\/\//.test(url)) void shell.openExternal(url); });
   ipcMain.handle('log:recent', () => recentLog());
   ipcMain.handle('blocked:clear', () => { changer.state.blocked = []; changer.saveState(); log('blocked list cleared'); return true; });

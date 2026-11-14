@@ -173,6 +173,7 @@
         <div><label for="cacheSize">Offline cache</label><input id="cacheSize" type="number" min="1"></div>
       </div>
       <label class="inline"><input id="autostart" type="checkbox"> Start with Windows</label>
+      <label class="inline"><input id="autoUpdate" type="checkbox"> Check for updates automatically</label>
       <div class="hint" id="autostartHint"></div>
     </section>
   </div>
@@ -213,6 +214,14 @@
         </div>
       </div>
       <dl class="about-list">
+        <dt>Updates</dt>
+        <dd>
+          <span id="updateStatus"></span>
+          <div style="margin-top:6px; display:flex; gap:6px">
+            <button id="updateCheck">Check for updates</button>
+            <button id="updateInstall" class="primary" hidden>Restart and install</button>
+          </div>
+        </dd>
         <dt>Project on GitHub</dt><dd><a href="#" id="aboutRepo"></a></dd>
         <dt>Releases</dt><dd><a href="#" id="aboutReleases"></a></dd>
         <dt>Data folder</dt><dd id="aboutData" class="mono"></dd>

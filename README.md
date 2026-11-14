@@ -22,8 +22,13 @@ npm run installer    # build release/ImmichWallpaper-Setup-<version>.exe (per-us
 
 GitHub Actions (`.github/workflows/build.yml`) builds the installer on every push to `master`.
 To publish a new version, bump `version` in `package.json` and push: the workflow creates the release
-`v<version>` with `ImmichWallpaper-Setup-<version>.exe`. Pushes without a version bump only keep the installer
-as a workflow artifact for 30 days.
+`v<version>` with `ImmichWallpaper-Setup-<version>.exe`, its blockmap and `latest.yml`. Pushes without a version
+bump only keep the installer as a workflow artifact for 30 days.
+
+Installed apps update themselves (electron-updater, `src/updater.ts`): they check the releases a minute after start
+and every 6 hours, download the new installer in the background and install it on quit or via the tray's
+"Restart to update". Settings → Schedule → "Check for updates automatically" turns the periodic check off;
+About → "Check for updates" checks right away.
 
 ## Features
 

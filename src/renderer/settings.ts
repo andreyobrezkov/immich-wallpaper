@@ -1,10 +1,19 @@
 // Settings window script (runs in the sandboxed renderer; talks to main only through window.api).
 
 interface NamedItem { id: string; name: string; count?: number }
+type UpdateStatus =
+  | { state: 'disabled'; reason: string }
+  | { state: 'idle'; checkedAt: number | null }
+  | { state: 'checking' }
+  | { state: 'available'; version: string }
+  | { state: 'downloading'; version: string; percent: number }
+  | { state: 'downloaded'; version: string }
+  | { state: 'error'; message: string };
 interface SettingsData {
   cfg: Record<string, any>;
   hasKey: boolean; keyHint: string;
   about: { version: string; homepage: string; description: string; electron: string; logFile: string };
+  update: UpdateStatus;
   screen: { width: number; height: number }; orientation: string;
   monitors: { label: string; orientation: string }[];
   activeProfile: string | null;
@@ -25,13 +34,16 @@ interface Api {
   clearBlocked(): Promise<boolean>;
   onLogLine(fn: (line: string) => void): void;
   onStateChanged(fn: () => void): void;
+  checkUpdate(): Promise<UpdateStatus>;
+  installUpdate(): Promise<void>;
+  onUpdateStatus(fn: (s: UpdateStatus) => void): void;
 }
 interface Window { api: Api }
 
 const $ = <T extends HTMLElement = HTMLInputElement>(id: string) => document.getElementById(id) as T;
 const NUM_FIELDS = ['smartTop', 'minWidth', 'minHeight', 'minAspect', 'maxAspect', 'intervalMinutes', 'historySize', 'cacheSize'];
 const TEXT_FIELDS = ['server', 'orientation', 'style', 'quality'];
-const BOOL_FIELDS = ['autostart', 'perMonitor', 'lockScreen'];
+const BOOL_FIELDS = ['autostart', 'autoUpdate', 'perMonitor', 'lockScreen'];
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
@@ -370,6 +382,24 @@ function renderAbout() {
   link('aboutReleases', `${a.homepage}/releases`);
   $<HTMLElement>('aboutData').textContent = data.dataDir;
   $<HTMLElement>('aboutElectron').textContent = a.electron;
+  renderUpdate(data.update);
+}
+
+function renderUpdate(s: UpdateStatus) {
+  const text: Record<UpdateStatus['state'], string> = {
+    disabled: 'Not available in dev mode (works in the installed app).',
+    idle: s.state === 'idle' && s.checkedAt ? `Up to date (checked ${new Date(s.checkedAt).toLocaleTimeString()}).` : 'Not checked yet.',
+    checking: 'Checking…',
+    available: s.state === 'available' ? `Version ${s.version} found, downloading…` : '',
+    downloading: s.state === 'downloading' ? `Downloading ${s.version}: ${s.percent}%` : '',
+    downloaded: s.state === 'downloaded' ? `Version ${s.version} is ready. It installs when you quit, or right now:` : '',
+    error: s.state === 'error' ? `Last check failed: ${s.message}` : '',
+  };
+  const el = $<HTMLSpanElement>('updateStatus');
+  el.textContent = text[s.state];
+  el.className = s.state === 'error' ? 'err' : s.state === 'downloaded' ? 'ok' : '';
+  $<HTMLButtonElement>('updateCheck').disabled = ['disabled', 'checking', 'available', 'downloading', 'downloaded'].includes(s.state);
+  $<HTMLButtonElement>('updateInstall').hidden = s.state !== 'downloaded';
 }
 
 // ---------- save ----------
@@ -415,6 +445,9 @@ async function init() {
   document.querySelectorAll<HTMLButtonElement>('.tabs button').forEach(b => { b.onclick = () => void showTab(b.dataset.tab!); });
   window.api.onLogLine(onLogLine);
   window.api.onStateChanged(() => void onStateChanged());
+  window.api.onUpdateStatus(s => { data.update = s; renderUpdate(s); });
+  $('updateCheck').onclick = async () => renderUpdate(await window.api.checkUpdate());
+  $('updateInstall').onclick = () => void window.api.installUpdate();
 
   if (data.hasKey && data.cfg.server) { void loadLists(); void preview(); }
   else setStatus($<HTMLDivElement>('checkStatus'), 'Enter the server URL and API key, then check the connection.', 'warn');

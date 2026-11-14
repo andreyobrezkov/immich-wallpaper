@@ -12,4 +12,7 @@ contextBridge.exposeInMainWorld('api', {
   clearBlocked: () => ipcRenderer.invoke('blocked:clear'),
   onLogLine: (fn: (line: string) => void) => { ipcRenderer.on('log:line', (_e, line: string) => fn(line)); },
   onStateChanged: (fn: () => void) => { ipcRenderer.on('state:changed', () => fn()); },
+  checkUpdate: () => ipcRenderer.invoke('update:check'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  onUpdateStatus: (fn: (s: unknown) => void) => { ipcRenderer.on('update:status', (_e, s) => fn(s)); },
 });
