@@ -12,6 +12,13 @@ npm run dist         # build release/win-unpacked/Immich Wallpaper.exe
 npm run installer    # build release/ImmichWallpaper-Setup-<version>.exe (per-user, no admin)
 ```
 
+## Releases
+
+GitHub Actions (`.github/workflows/build.yml`) builds the installer on every push to `master`.
+To publish a new version, bump `version` in `package.json` and push: the workflow creates the release
+`v<version>` with `ImmichWallpaper-Setup-<version>.exe`. Pushes without a version bump only keep the installer
+as a workflow artifact for 30 days.
+
 ## Features
 
 - **Per monitor** (`perMonitor`, on by default): a separate photo on each monitor through `IDesktopWallpaper`;

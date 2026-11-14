@@ -8,6 +8,7 @@
 
 ## Decisions
 
-- Auto-update: not planned. Update by building a new installer (`npm run installer`) and running it over the old one.
+- Auto-update: not planned. New versions are built by GitHub Actions (bump `version`, push to `master`) and
+  installed by running the release's installer over the old one.
 - HEIC: converted locally from the original (heic-decode/WASM); Immich's full-size generation can stay off.
   RAW is not handled: the library has no RAW files.
